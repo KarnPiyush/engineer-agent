@@ -119,7 +119,9 @@ ea_cmd_index() {
   local args=(index --root "$project_root")
   [[ "$force" == true ]] && args+=(--force)
   [[ "$quiet" == true ]] && args+=(--quiet)
-  args+=("${exclude_args[@]}")
+  if [[ ${#exclude_args[@]} -gt 0 ]]; then
+    args+=("${exclude_args[@]}")
+  fi
   log_step "Indexing project at $project_root (Gemini embeddings)"
   if [[ "$quiet" != true ]]; then
     log_warn "First run can take many minutes. Progress: lines starting with [ea-index] (stderr)."
