@@ -1,0 +1,46 @@
+{
+  "description": "Reference: typical tools exposed by the Gemini CLI (google-gemini/gemini-cli). engineer-agent does not inject this list into prompts; backends use their native tool names. See docs/tools/ for your CLI version.",
+  "tools": [
+    {
+      "name": "read_file",
+      "description": "Read file contents (text, images, PDFs, etc. per CLI)",
+      "params": ["path"]
+    },
+    {
+      "name": "grep_search",
+      "description": "Search for a regex pattern in file contents",
+      "params": ["pattern", "path_glob_optional"]
+    },
+    {
+      "name": "list_directory",
+      "description": "List files and subdirectories in a path",
+      "params": ["path"]
+    },
+    {
+      "name": "glob",
+      "description": "Find files matching glob patterns",
+      "params": ["pattern"]
+    },
+    {
+      "name": "run_shell_command",
+      "description": "Run a shell command (may require approval in some modes)",
+      "params": ["command"]
+    },
+    {
+      "name": "edit",
+      "description": "Apply in-place edits to a file (Gemini CLI file edit tool)",
+      "params": ["path", "instructions_or_patch"]
+    },
+    {
+      "name": "write_file",
+      "description": "Write or create a file",
+      "params": ["path", "contents"]
+    },
+    {
+      "name": "cli_help",
+      "description": "Help for available CLI commands/tools",
+      "params": []
+    }
+  ],
+  "notes": "Kilo CLI exposes different tool names; use FILE_WRITE blocks in engineer-agent output for cross-backend file artifacts."
+}

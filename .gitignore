@@ -1,0 +1,15 @@
+# Generated artifacts (when this repo itself is used as a target project)
+.engineer-agent/
+.code-review/
+
+# OS files
+.DS_Store
+
+# Indexer (Node)
+lib/indexer/node_modules/
+lib/indexer/dist/
+
+# Editor
+*.swp
+*.swo
+*~

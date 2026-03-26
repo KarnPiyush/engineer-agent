@@ -1,0 +1,159 @@
+#!/bin/bash
+# engineer-agent unified CLI entry point
+
+set -euo pipefail
+
+# Resolve this script to its real location, even when invoked via symlink.
+resolve_script_dir() {
+  local src="${BASH_SOURCE[0]}"
+  while [[ -h "$src" ]]; do
+    local dir
+    dir="$(cd -P "$(dirname "$src")" && pwd)"
+    src="$(readlink "$src")"
+    [[ "$src" != /* ]] && src="$dir/$src"
+  done
+  cd -P "$(dirname "$src")" && pwd
+}
+
+EA_ROOT="$(resolve_script_dir)"
+
+# shellcheck disable=SC1091
+source "$EA_ROOT/lib/common.sh"
+# shellcheck disable=SC1091
+source "$EA_ROOT/lib/cmd-plan.sh"
+# shellcheck disable=SC1091
+source "$EA_ROOT/lib/cmd-review.sh"
+# shellcheck disable=SC1091
+source "$EA_ROOT/lib/cmd-hook.sh"
+# shellcheck disable=SC1091
+source "$EA_ROOT/lib/cmd-fix.sh"
+# shellcheck disable=SC1091
+source "$EA_ROOT/lib/cmd-debug.sh"
+# shellcheck disable=SC1091
+source "$EA_ROOT/lib/cmd-ship.sh"
+# shellcheck disable=SC1091
+source "$EA_ROOT/lib/cmd-commit.sh"
+# shellcheck disable=SC1091
+source "$EA_ROOT/lib/cmd-parallel.sh"
+# shellcheck disable=SC1091
+source "$EA_ROOT/lib/cmd-capture.sh"
+# shellcheck disable=SC1091
+source "$EA_ROOT/lib/cmd-index.sh"
+
+ea_usage() {
+  cat <<EOF
+EA — Engineer Agent CLI
+Orchestrates Gemini Pro, Kilo Code CLI, and Cursor Pro.
+
+Usage:
+  ea <command> [options]
+
+Global Options:
+  --verbose     Show full prompts and responses
+  --dry-run     Show what would be done without executing
+
+Commands:
+  plan       Generate spec → architecture → plan → tasks (Gemini Pro)
+  review     AI code review on git diffs (Kilo or Gemini)
+  fix        Quick-fix a file or error (Kilo Qwen3 Coder)
+  debug      Analyze a bug and generate Cursor debug brief (Kilo DeepSeek R1)
+  ship       Plan + execute a feature (Gemini plans, Kilo executes)
+  commit     Generate a commit message from staged diff (Kilo Kimi K2)
+  parallel   Spawn parallel Kilo agents on separate branches
+  hook       Manage git pre-push integration (install/uninstall)
+  capture    Capture terminal history for context
+  index      Build or search local semantic index (RAG)
+  help       Show this help
+
+Routing:
+  plan/architect   → Gemini Pro (1M context window)
+  fix/review/commit → Kilo Code CLI (free models)
+  debug            → Kilo (analysis) + Cursor (fix via debug brief)
+  ship             → Gemini (plan) + Kilo (execute)
+
+Examples:
+  ea plan "add JWT auth to the API"
+  ea fix src/auth.ts
+  ea debug "TypeError: Cannot read property 'id'"
+  ea review
+  ea ship "add rate limiting" --breakdown
+  ea commit
+  ea parallel "fix CSS layout" "add dark mode" "write auth tests"
+  ea hook install
+  ea --verbose fix src/auth.ts
+EOF
+}
+
+main() {
+  export EA_VERBOSE="false"
+  export EA_DRY_RUN="false"
+  
+  local args=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --verbose)
+        export EA_VERBOSE="true"
+        ;;
+      --dry-run)
+        export EA_DRY_RUN="true"
+        ;;
+      --)
+        shift
+        args+=("$@")
+        break
+        ;;
+      -*)
+        args+=("$1")
+        ;;
+      *)
+        args+=("$1")
+        ;;
+    esac
+    shift
+  done
+  
+  local cmd="${args[0]:-help}"
+  
+  case "$cmd" in
+    plan)
+      ea_cmd_plan "${args[@]:1}"
+      ;;
+    review)
+      ea_cmd_review "${args[@]:1}"
+      ;;
+    fix)
+      ea_cmd_fix "${args[@]:1}"
+      ;;
+    debug)
+      ea_cmd_debug "${args[@]:1}"
+      ;;
+    ship)
+      ea_cmd_ship "${args[@]:1}"
+      ;;
+    commit)
+      ea_cmd_commit "${args[@]:1}"
+      ;;
+    parallel)
+      ea_cmd_parallel "${args[@]:1}"
+      ;;
+    hook)
+      ea_cmd_hook "${args[@]:1}"
+      ;;
+    capture)
+      ea_cmd_capture "${args[@]:1}"
+      ;;
+    index)
+      ea_cmd_index "${args[@]:1}"
+      ;;
+    help|-h|--help)
+      ea_usage
+      ;;
+    *)
+      log_error "Unknown command: $cmd"
+      ea_usage
+      return 1
+      ;;
+  esac
+}
+
+main "$@"
