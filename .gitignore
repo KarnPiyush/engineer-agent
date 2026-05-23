@@ -1,6 +1,6 @@
 # Generated artifacts (when this repo itself is used as a target project)
 .engineer-agent/
-.code-review/
+.code-review-graph/
 
 # OS files
 .DS_Store

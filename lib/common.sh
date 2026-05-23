@@ -121,6 +121,57 @@ require_cmd() {
 }
 
 # ---------------------------------------------------------------------------
+# Python venv management (structural indexing)
+# ---------------------------------------------------------------------------
+
+_ensure_python_venv() {
+  local project_root="$1"
+  local venv_dir="$project_root/.engineer-agent/.ea_venv"
+  local python_cmd="python3"
+
+  if ! command -v "$python_cmd" >/dev/null 2>&1; then
+    fail "Python 3 is required but not found. Please install Python 3.10+."
+  fi
+
+  # Check version >= 3.10
+  if ! "$python_cmd" -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >/dev/null 2>&1; then
+    local version
+    version=$($python_cmd --version 2>&1)
+    fail "Python 3.10+ is required. Found: $version"
+  fi
+
+  if [[ ! -d "$venv_dir" ]]; then
+    log_step "Creating Python virtual environment at $venv_dir..."
+    "$python_cmd" -m venv "$venv_dir" || fail "Failed to create virtual environment."
+  fi
+
+  local python_venv="$venv_dir/bin/python"
+  local pip_cmd="$venv_dir/bin/pip"
+  
+  # Check if code-review-graph is installed by trying to import it
+  if ! "$python_venv" -c "import code_review_graph" >/dev/null 2>&1; then
+    log_step "Installing code-review-graph and dependencies..."
+    if [[ ! -d "$EA_ROOT/code-review-graph" ]]; then
+      fail "code-review-graph source not found at $EA_ROOT/code-review-graph"
+    fi
+    # Use --quiet to keep output clean, but show errors if they happen
+    "$pip_cmd" install --quiet -e "$EA_ROOT/code-review-graph[google-embeddings]" || fail "Failed to install code-review-graph."
+    log_ok "Python environment ready."
+  fi
+}
+
+# run_python_tool PROJECT_ROOT TOOL_NAME ARGS...
+run_python_tool() {
+  local project_root="$1"
+  shift
+  local tool_name="$1"
+  shift
+  local venv_dir="$project_root/.engineer-agent/.ea_venv"
+  _ensure_python_venv "$project_root"
+  "$venv_dir/bin/$tool_name" "$@"
+}
+
+# ---------------------------------------------------------------------------
 # Tool availability checks
 # ---------------------------------------------------------------------------
 
